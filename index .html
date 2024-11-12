@@ -1,0 +1,160 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Shooting Game (CSS and JS)</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #222;
+    }
+
+    /* Game Container */
+    .game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      perspective: 800px;
+      overflow: hidden;
+    }
+
+    /* Player */
+    .player {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: #0f0;
+      transform-style: preserve-3d;
+      left: 50%;
+      bottom: 10%;
+      transform: translateX(-50%);
+    }
+
+    /* Bullet */
+    .bullet {
+      position: absolute;
+      width: 5px;
+      height: 20px;
+      background-color: #f00;
+      border-radius: 2px;
+      bottom: 100%;
+      transform: translateZ(50px);
+    }
+
+    /* Enemy */
+    .enemy {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: #f00;
+      transform: translateZ(-200px) translateX(calc(var(--x) * 1px)) translateY(calc(var(--y) * 1px));
+      transition: transform 0.5s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <div class="player"></div>
+</div>
+
+<script src="game.js"></script>
+
+<p Align="Center"><h6>Made by Ashwani<h6></p>
+</body>
+</html><script>// game.js
+
+const player = document.querySelector('.player');
+const gameContainer = document.querySelector('.game-container');
+
+// Track bullets and enemies
+let bullets = [];
+let enemies = [];
+
+// Handle player movement with touch events
+gameContainer.addEventListener('touchmove', (e) => {
+  const touchX = e.touches[0].clientX;
+  player.style.left = `${touchX - 25}px`;
+});
+
+// Shooting bullets
+function shootBullet() {
+  const bullet = document.createElement('div');
+  bullet.classList.add('bullet');
+  bullet.style.left = `${player.offsetLeft + 22}px`;  // Align with the player
+  bullet.style.bottom = '80px';  // Start above the player
+  gameContainer.appendChild(bullet);
+  bullets.push(bullet);
+
+  // Move the bullet up
+  const bulletInterval = setInterval(() => {
+    bullet.style.bottom = `${parseInt(bullet.style.bottom) + 10}px`;
+    if (parseInt(bullet.style.bottom) > window.innerHeight) {
+      bullet.remove();
+      bullets = bullets.filter(b => b !== bullet);
+      clearInterval(bulletInterval);
+    }
+  }, 20);
+}
+
+// Spawn enemies
+function spawnEnemy() {
+  const enemy = document.createElement('div');
+  enemy.classList.add('enemy');
+  enemy.style.setProperty('--x', Math.random() * window.innerWidth - 25);
+  enemy.style.setProperty('--y', -50);  // Start above the visible area
+  gameContainer.appendChild(enemy);
+  enemies.push(enemy);
+
+  // Move the enemy down
+  const enemyInterval = setInterval(() => {
+    enemy.style.setProperty('--y', parseInt(enemy.style.getPropertyValue('--y')) + 5);
+
+    // Remove enemy if it reaches the bottom
+    if (parseInt(enemy.style.getPropertyValue('--y')) > window.innerHeight) {
+      enemy.remove();
+      enemies = enemies.filter(e => e !== enemy);
+      clearInterval(enemyInterval);
+    }
+  }, 100);
+}
+
+// Check for collisions
+function checkCollisions() {
+  bullets.forEach(bullet => {
+    enemies.forEach(enemy => {
+      const bulletRect = bullet.getBoundingClientRect();
+      const enemyRect = enemy.getBoundingClientRect();
+
+      // Simple AABB collision detection
+      if (
+        bulletRect.right > enemyRect.left &&
+        bulletRect.left < enemyRect.right &&
+        bulletRect.bottom > enemyRect.top &&
+        bulletRect.top < enemyRect.bottom
+      ) {
+        enemy.remove();
+        bullet.remove();
+        enemies = enemies.filter(e => e !== enemy);
+        bullets = bullets.filter(b => b !== bullet);
+      }
+    });
+  });
+}
+
+// Game loop to check collisions
+function gameLoop() {
+  checkCollisions();
+  requestAnimationFrame(gameLoop);
+}
+
+// Shooting interval and enemy spawn interval
+setInterval(shootBullet, 500);
+setInterval(spawnEnemy, 1000);
+gameLoop();</script>
